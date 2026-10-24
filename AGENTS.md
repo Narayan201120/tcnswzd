@@ -31,6 +31,13 @@ Run commands in the Codespace unless they are Git or documentation operations th
 - Lint, when Phase 3 configures it: use the configured frontend lint command from `frontend/package.json`; no lint configuration exists yet.
 - Docker Compose, when Phase 4 creates it: `docker compose up --build`. Run only in Codespace or Actions. Docker files and Compose configuration are not implemented yet.
 
+## Deployment (Vercel, Stage A)
+
+- The repo root carries `vercel.json`, `requirements.txt`, and `api/index.py`. The Vercel build runs `npm ci` and `npm run build` inside `frontend`, serves `frontend/dist` as the static site, and rewrites `/api/*` and `/health` to the Python function. `includeFiles` bundles `backend/**` with the snapshot.
+- `requirements.txt` lists FastAPI and Pydantic only. Vercel's Python runtime serves the ASGI app itself, so Uvicorn is never part of the deployment dependencies.
+- Deploy by importing the GitHub repository in the Vercel dashboard (project name `windlens`) so every push to master redeploys. The CLI alternative is `npx vercel@latest login`, then `link`, then `--prod`; no global install anywhere. Never commit `.vercel/` project settings.
+- After deployment, verify `/health`, `/api/forecast/latest`, `/api/accuracy/summary` (expect MAE 2,038.91 MW and bias +1,747.89 MW), the SPA root, a hash route, and that access needs no login. Do not write the production URL into any file until it is confirmed working.
+
 ## Conventions
 
 - Keep domain selection and metric calculations as typed, pure functions in `backend/metrics.py`; parse and validate external timestamps at the boundary in `backend/domain.py`.

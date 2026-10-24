@@ -7,9 +7,9 @@
 | 0. Repository and environment | Done | 8e0387f, cd9d732, 380230f |
 | 1. Research and design | Done | 00a1803, 0c71eea, c530b9b |
 | 2. Backend and snapshot | Done | f86a900, 840f7f5, eb01f72, d655763, 7ad05d3 |
-| 3. React frontend | Pending | Not started |
+| 3. React frontend | Done | 473cfce |
 | 4. Docker and CI | Pending | Not started |
-| 5. Vercel deployment | Pending | Not started |
+| 5. Vercel deployment | Stage A prepared and locally verified; awaiting dashboard deploy | This commit |
 | 6. README, video, and final handoff | Pending | Not complete |
 
 Repository head before this handoff change was 7ad05d3. Phase 2 verification in the Codespace: 20 tests passed, metrics module coverage 100% (170 of 170 statements). Tests were not rerun during this documentation-only handoff turn.
@@ -117,13 +117,28 @@ Route validation and service errors use {"detail":"message"}. Observed invalid c
 - Frontend, component tests, linting, Docker, CI, public Vercel deployment, video, final README, and submission form are not complete.
 - By-hour and by-lead-time are separate views. Do not present them as independent dimensions of a 2D effect.
 
-## Next step: Phase 3 scope
+## Vercel deployment, Stage A (native Python runtime, prepared and locally verified)
 
-Implement only after Phase 3 is approved.
+Files added at the repository root: `vercel.json`, `requirements.txt`, and `api/index.py`.
 
-- Views: (1) Decision view: pick delivery day, show actual-free latest forecast available at cutoff, with the cutoff time and publishTime shown clearly. (2) Accuracy view: actual vs forecast chart, error over time, metric cards (MAE, RMSE, bias, P95), error by hour, error by horizon, error distribution. (3) Plain language "what this means for buying" notes, e.g. suggested buffer from P90/P95 error.
-- Header shows "WindLens" and the tagline.
-- Loading and error states, responsive, accessible, polished enough to impress a utility client.
-- Component tests for key logic; lint and format configured.
+- vercel.json: install command `cd frontend && npm ci`, build command `cd frontend && npm run build`, output directory `frontend/dist`; `functions` entry for `api/index.py` with `includeFiles: backend/**` so the backend package and `backend/data/january_2026.json` ship with the function; rewrites send `/api/:path*` and `/health` to the function while everything else serves the static build. Hash routing means no SPA fallback rewrite is needed: the only document route is `/`, and all views are `/#/...` fragments.
+- requirements.txt: `fastapi==0.119.1` and `pydantic==2.14.1` only. Vercel's Python runtime serves the ASGI app with its own server, so Uvicorn is intentionally absent. Verified during the local build that Vercel installs requirements with uv and vendors the packages into the function.
+- api/index.py: imports the one FastAPI app object from backend.app after inserting the repository root into sys.path, so the import resolves regardless of runtime path order. The snapshot path in backend/store.py is resolved from its own file location, not the working directory.
+- Local verification in the Codespace, no Vercel account needed: loading api/index.py by file path from /tmp boots the app, and TestClient calls return health ok with 1,488 actual rows and 17,864 vintages, MAE 2,038.91 MW and bias +1,747.89 MW and relative bias +15.49 percent for the default January run, and 24 forecast points with 18,781.0 MW first forecast and zero missing for Jan 2 at the 09:00 cutoff. These match the Codespace backend values exactly. A full `npx vercel@latest build` with stub project settings succeeded: frontend built (572.4 kB JS, 162.9 kB gzip), Python function built with uv, and the function bundle map includes backend/data/january_2026.json with fastapi, pydantic, starlette, and pydantic_core vendored. The uv virtual environment used for the function weighed 19 MB uncompressed, in line with the prebuild estimate of about 18 MB.
+- Deployment steps for the owner: sign in at vercel.com, Add New, Project, Import Narayan201120/tcnswzd. Framework preset Other, root directory left empty (repository root), project name `windlens` (fallbacks `windlens-app`, `windlens-forecast`). vercel.json supplies the build settings; no environment variables are required. Deploy, then Settings, Deployment Protection: disable Vercel Authentication so the production URL is public. Every push to master redeploys automatically.
+- The production URL is deliberately not written here until the owner confirms the deployment works.
 
-The frontend must use the API contract above. Render the decision endpoint without actual values; use the comparison series for the accuracy chart; use summary metrics and buffers; use the hour profile, lead-time buckets, signed and absolute errors, cutoff sensitivity, and revision vintages from their respective endpoints. Label MW and percentages clearly. Display UTC timestamps with a UTC label. Use Europe/London for cutoffs and by-hour grouping. Keep loading, empty, and HTTP error states with the detail field.
+## Next step: Vercel Stage A deploy, then Stage B, then Phase 4
+
+Order confirmed with the owner: Phase 5 first (two stages), then Phase 4, then Phase 6.
+
+1. Stage A (this commit): the owner imports the repository in the Vercel dashboard (project name `windlens`, framework preset Other, root directory left at the repository root). Dashboard build settings are supplied by vercel.json: install `cd frontend && npm ci`, build `cd frontend && npm run build`, output `frontend/dist`. Python runtime default 3.12. If Deployment Protection is enabled, turn it off so the production URL is public.
+2. After the owner shares the URL: verify with curl `/health`, `/api/forecast/latest`, `/api/accuracy/summary` (expect MAE 2,038.91 MW and bias +1,747.89 MW), the SPA root, and a hash route, and confirm no login wall. Only then may the production URL be written into files.
+3. Stage B (time boxed to one hour, only after Stage A works): branch `vercel-container` adds `Dockerfile.vercel` (python 3.12 slim, uvicorn on 0.0.0.0:$PORT, snapshot included) and a `services` based vercel.json with a web service for the Vite build and an api service using `runtime: container` and `entrypoint: Dockerfile.vercel`, with rewrites sending `/api/(.*)` and `/health` to the api service. Per the Vercel Docker guide, the original request path reaches the container service, so the existing `/api` prefixed FastAPI routes work unchanged. Verify locally in the Codespace as far as docker build, run, and curl. Deployed as a second Vercel project from the branch; do not merge into master until the owner decides.
+4. Phase 4 (Docker and CI) after Phase 5 is approved, then Phase 6.
+
+## Phase 3 frontend scope, as implemented
+
+- Views: Decision (delivery day and cutoff controls, 24 hour published curve, peak, trough, mean cards, revisions panel, optional January bias adjustment slider), Accuracy (seven metric cards, actual versus forecast, signed error over time, daily mean error with positive day count, error by delivery hour, error by lead time, error distribution histogram, cutoff sensitivity table), Buying notes (sentences built from live API values, limitations list).
+- Stack: TypeScript, React 18, Vite 5, Recharts, plain CSS with light and dark support. Hash routing gives shareable view URLs without server rewrites. 29 Vitest and Testing Library tests pass; ESLint and Prettier configured and passing. Bundle 572.4 kB JS, 162.9 kB gzip, 8.4 kB CSS. Screenshots in docs/screenshots.
+- One typed API client module in frontend/src/api/client.ts with the base path from the single env var VITE_API_BASE_PATH (default /api). Pure helpers in frontend/src/lib (format, derive, notes). No fetch calls in components.
