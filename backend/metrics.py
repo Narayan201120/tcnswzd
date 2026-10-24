@@ -51,7 +51,7 @@ def percentile(values: Iterable[float], probability: float) -> float | None:
 
 def parse_cutoff(cutoff: str) -> time:
     parts = cutoff.split(":")
-    if len(parts) != 2:
+    if len(parts) != 2 or any(len(part) != 2 or not part.isascii() or not part.isdigit() for part in parts):
         raise ValueError("cutoff must use HH:MM in Europe/London")
     try:
         hour, minute = (int(part) for part in parts)
