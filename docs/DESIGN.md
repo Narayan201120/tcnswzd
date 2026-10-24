@@ -91,7 +91,7 @@ For each matched hourly target, define `error_mw = forecast_mw - actual_mw`. Pos
 - Bias: mean signed error in MW.
 - nMAE: `100 * MAE / mean(actual_mw)` as a percentage.
 - Relative bias: `100 * bias / mean(actual_mw)` as a percentage. Return unavailable if mean actual is zero.
-- Signed error percentiles: P5, P10, P50, P90, and P95 of `error_mw`.
+- Signed error percentiles: P5, P10, P50, P90, and P95 of `error_mw`. Percentiles use linear interpolation at rank `(n-1)*p` in the sorted values.
 - Absolute error percentiles: P50, P90, and P95 of `abs(error_mw)`.
 - MAPE: mean of `100 * abs(error_mw / actual_mw)` for nonzero actuals only. Exclude zero-actual rows, report the excluded count, and return unavailable when all actuals are zero. Do not replace a zero denominator with an epsilon.
 - One-sided buffer reference: clip each signed error at zero with `max(error_mw, 0)`, then compute P90 and P95 in MW across all scored hours. Also compute P90 and P95 of `100 * max(error_mw, 0) / forecast_mw` as percent of forecast for rows with nonzero forecast, reporting that denominator count. These are historical overforecast uncertainty references, not procurement instructions.
@@ -119,7 +119,7 @@ Use one FastAPI app object in `backend/app.py`. `api/index.py` is a thin Vercel 
 
 The reproducible ingestion command is `python -m backend.ingest`. It fetches all WINDFOR publications from Jan 1 through Jan 31 for lead-time analysis, plus Dec 31 publications that target Jan 2 so the first delivery day has its full revision history. The lead-time endpoint includes only Jan 1 through Jan 31 publication times; Dec 31 rows provide decision and revision context. It fetches FUELHH WIND actuals for delivery starts Jan 2 through Feb 1. The script uses bounded retries and a polite request interval, filters and normalizes rows, logs progress, and writes a compact versioned JSON snapshot under `backend/data/`. Ingestion is a development or maintenance operation and must never run as part of a production request. The app reads the committed snapshot by default.
 
-Use Python standard library math and statistics for the metric calculations. Do not add pandas, pyarrow, or numpy for this data volume. Runtime dependencies are FastAPI and its Pydantic/Starlette requirements. Test dependencies are separate. Phase 2 will report the measured snapshot size and installed runtime dependency size against Vercel's 250 MB unzipped function limit.
+Metrics use Python standard library math and statistics. The tested runtime dependencies are FastAPI 0.119.1, Starlette 0.48.0, Uvicorn 0.54.0, and Pydantic 2.14.1. Test dependencies are separate. No NumPy, pandas, or PyArrow is used. The committed snapshot has 1,488 actual rows and 17,864 forecast vintages, including 17,688 January publications and 176 Dec 31 context vintages, and is 2,244,993 bytes. A clean Codespace runtime dependency target measured 15,661,832 bytes. Runtime dependencies plus the backend tree and `api/index.py` measured about 18,016,666 bytes uncompressed, about 17.2 MiB, below the 250 MB Vercel function limit. This is a conservative input-size estimate, not a built Vercel artifact; deployment must confirm the final bundle.
 
 Production is planned as a static Vite frontend and Python serverless API on Vercel, with the snapshot bundled read-only. Docker Compose is for local and review environments. The core app does not depend on a live Elexon call.
 
