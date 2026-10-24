@@ -21,6 +21,13 @@ Run installs, tests, and Docker commands in a cloud development environment or C
 - `backend/requirements.txt` (fastapi, starlette, uvicorn) is the Docker runtime image.
 - `backend/requirements-dev.txt` adds coverage, httpx, pytest, and ruff for development and CI.
 
+## Production
+
+- Production URL: https://windlens-dayahead.vercel.app. It is a CLI alias pinned to the current production deployment of the tcnswzd project; the original https://tcnswzd.vercel.app domain also resolves and is retained.
+- Every push to master auto-deploys production because the Vercel Git integration is connected. To go CLI only, disconnect it in the Vercel dashboard under Project Settings, Git.
+- After every production deployment, re-point the alias and verify: `npx vercel@latest alias set <deployment-url> windlens-dayahead`, then check /health and /api/accuracy/summary on the alias.
+- Vercel Authentication is disabled for the project, so both domains are public. If protection is re-enabled, the alias goes behind a login wall again.
+
 ## Conventions
 
 - Keep domain selection and metric calculations as typed, pure functions in `backend/metrics.py`; parse and validate external timestamps at the boundary in `backend/domain.py`.
