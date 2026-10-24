@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.domain import ActualOutturn, ForecastVintage, parse_timestamp
+from backend.domain import ActualOutturn, ForecastVintage, ScoredPoint, parse_timestamp
 from backend.metrics import (
     align_hourly_actuals,
     all_vintage_lead_profile,
@@ -140,9 +140,7 @@ def test_summary_handles_zero_actual_and_reports_one_sided_buffer() -> None:
     assert summary["signed_error_percentiles_mw"]["p95"] == pytest.approx(92.5)
 
 
-def forecast_point(start: datetime, forecast_mw: float, actual_mw: float):
-    from backend.domain import ScoredPoint
-
+def forecast_point(start: datetime, forecast_mw: float, actual_mw: float) -> ScoredPoint:
     published = start - timedelta(hours=1)
     return ScoredPoint(
         start_time=start,
@@ -179,6 +177,7 @@ def test_all_vintage_profile_buckets_leads_and_reports_exclusions() -> None:
         forecast(start, start - timedelta(hours=48), 10),
         forecast(start, start + timedelta(minutes=30), 10),
         forecast(missing_start, missing_start - timedelta(hours=2), 5),
+        forecast(start + timedelta(hours=2), start + timedelta(hours=1), 3),
     ]
     profile = all_vintage_lead_profile(rows, alignment, [start, missing_start])
     assert profile["eligible_vintage_count"] == 2
@@ -201,3 +200,19 @@ def test_by_delivery_clock_hour_and_distribution_keep_signed_errors() -> None:
     distribution = error_distribution(points)
     assert distribution["signed_error_mw"] == [-5, 5]
     assert distribution["absolute_error_mw"] == [5, 5]
+
+
+
+
+def test_delivery_hour_range_rejects_end_before_start() -> None:
+    with pytest.raises(ValueError, match="end date"):
+        delivery_hour_starts(date(2026, 1, 3), date(2026, 1, 2))
+
+
+def test_scoring_reports_missing_forecast_when_actual_pair_exists() -> None:
+    start = dt("2026-01-02T00:00:00Z")
+    actuals = [actual(start, 10), actual(start + timedelta(minutes=30), 20)]
+    result = score_delivery_window([], actuals, date(2026, 1, 2), date(2026, 1, 2), "09:00")
+    assert result.missing_forecast_targets == 1
+    assert result.missing_half_hour_targets == 23
+    assert result.points == ()

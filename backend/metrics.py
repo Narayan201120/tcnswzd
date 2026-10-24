@@ -53,10 +53,7 @@ def parse_cutoff(cutoff: str) -> time:
     parts = cutoff.split(":")
     if len(parts) != 2 or any(len(part) != 2 or not part.isascii() or not part.isdigit() for part in parts):
         raise ValueError("cutoff must use HH:MM in Europe/London")
-    try:
-        hour, minute = (int(part) for part in parts)
-    except ValueError as error:
-        raise ValueError("cutoff must use HH:MM in Europe/London") from error
+    hour, minute = int(parts[0]), int(parts[1])
     if not 0 <= hour <= 23 or not 0 <= minute <= 59:
         raise ValueError("cutoff must use HH:MM in Europe/London")
     return time(hour=hour, minute=minute)
