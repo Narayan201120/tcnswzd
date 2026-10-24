@@ -134,3 +134,61 @@ Production is planned as a static Vite frontend and Python serverless API on Ver
 - `GET /api/accuracy/distribution?start=2026-01-02&end=2026-02-01&cutoff=09:00`: signed and absolute error distribution values.
 - `GET /api/accuracy/cutoff-sensitivity?start=2026-01-02&end=2026-02-01&cutoff=10:00`: comparison for 08:00, 09:00, 09:20, and the supplied 10:00 time.
 - `GET /api/revisions?delivery_date=2026-01-02&cutoff=09:00`: all snapshot vintages for that delivery date, grouped into hourly series and marked per target with `selected_at_cutoff`.
+
+
+## Known characteristics: January 2026 bias and alignment audit
+
+The January 2 through February 1 run has 744 scored hours and no missing half-hour actuals. With the 09:00 Europe/London decision cutoff and the documented same-hour mean alignment, mean actual generation was 11,283.56 MW. MAE was 2,038.91 MW, nMAE was 18.07%, signed bias was +1,747.89 MW, and relative bias was +15.49%. The sign convention is forecast minus actual, so the forecast was above reported outturn on average.
+
+### Hand check of the first target
+
+For target `2026-01-02T00:00:00Z`, selected forecast was 18,781 MW, published at `2026-01-01T07:30:00Z`. FUELHH actuals were 15,228 MW at `00:00Z` and 15,505 MW at `00:30Z`. Their mean is 15,366.5 MW. Error is `18,781 - 15,366.5 = +3,414.5 MW`. This matches the snapshot and endpoint.
+
+### Alignment sensitivity
+
+All combinations scored 744 targets. A shift means actual starts at forecast startTime plus the stated hours. Single-period comparisons use only the first or second half-hour; mean uses both.
+
+| Actual shift | First half MAE / bias MW | Second half MAE / bias MW | Hourly mean MAE / bias MW |
+| ---: | ---: | ---: | ---: |
+| -2 h | 1,966.44 / +1,717.30 | 1,961.39 / +1,721.80 | 1,958.24 / +1,719.55 |
+| -1 h | 1,969.73 / +1,731.90 | 1,989.60 / +1,736.08 | 1,974.53 / +1,733.99 |
+| 0 h | 2,022.47 / +1,745.94 | 2,061.45 / +1,749.84 | 2,038.91 / +1,747.89 |
+| +1 h | 2,098.08 / +1,759.04 | 2,143.73 / +1,763.11 | 2,119.09 / +1,761.08 |
+| +2 h | 2,183.77 / +1,772.30 | 2,233.20 / +1,776.51 | 2,206.78 / +1,774.40 |
+
+The lowest MAE among these 15 comparisons is the -2 h hourly mean at 1,958.24 MW, 80.67 MW lower than the documented 0 h mean. Therefore the documented alignment does not minimize this sample's error. The 0 h rule is retained because it pairs each hourly forecast with the half-hours whose UTC starts fall within that target hour, as required by the approved scoring definition. The -2 h result is a temporal-skill anomaly to validate with a data owner, not evidence to silently relabel timestamps. All shifts retain a large positive bias, so the bias is not created by the half-hour aggregation choice.
+
+### Bias by actual generation level
+
+Terciles are rank-balanced groups of 248 hours each, ordered by hourly mean actual. Relative bias is signed bias divided by mean actual.
+
+| Actual group | Actual range MW | Mean actual MW | MAE MW | Bias MW | Relative bias |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Low | 1,711.5 to 8,824.5 | 6,331.43 | 1,820.55 | +1,450.68 | +22.91% |
+| Mid | 8,828.5 to 14,474.5 | 11,658.24 | 1,941.92 | +1,510.19 | +12.95% |
+| High | 14,481.0 to 17,755.5 | 15,861.00 | 2,354.27 | +2,282.79 | +14.39% |
+
+Bias is positive in every tercile and absolute MW bias is largest in the high group. Relative bias is not monotonic: it is largest in the low group, falls in the middle, then rises in the high group. This does not show a simple curtailment-style pattern where overforecast grows steadily with wind output. FUELHH contains reported output, not unconstrained available wind or a curtailment flag, so curtailment cannot be inferred.
+
+### Bias by local time of day
+
+The groups use four-hour Europe/London clock blocks. January is on GMT. Each contains 124 scored hours.
+
+| Local hours | Mean actual MW | MAE MW | Bias MW | Relative bias |
+| --- | ---: | ---: | ---: | ---: |
+| 00 to 03 | 11,287.76 | 2,227.33 | +2,165.31 | +19.18% |
+| 04 to 07 | 10,816.00 | 2,360.57 | +2,286.07 | +21.14% |
+| 08 to 11 | 11,051.94 | 1,980.60 | +1,764.88 | +15.97% |
+| 12 to 15 | 11,178.46 | 1,900.75 | +1,323.46 | +11.84% |
+| 16 to 19 | 11,658.81 | 1,918.20 | +1,339.94 | +11.49% |
+| 20 to 23 | 11,708.37 | 1,846.03 | +1,607.67 | +13.73% |
+
+Every time block has positive bias, but the size varies by local time. Together with the tercile results, this is not a single constant MW offset and not a clean monotonic high-wind effect. It is a measured forecast-versus-outturn characteristic needing further periods and source context before assigning a cause.
+
+### Hour convention check
+
+Elexon's [WINDFOR dataset stream documentation](https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR/stream) exposes startTime for each forecast target. The official [wind generation page](https://bmrs.elexon.co.uk/wind-generation) describes the product as hourly and states that it spans 20:00 on D through 20:00 on D+2. The payload has no endTime, and documentation does not explicitly state the half-open interval boundary. Interpreting target T as the hour beginning at T is consistent with the documented hourly targets and sample timestamps; averaging FUELHH at T and T+30 minutes implements the approved hourly comparison. Treat [T, T+1h) as the application's convention, not a quoted Elexon definition. The empirical -2 h minimum remains an open validation item.
+
+### Client note
+
+Across the 744 January decision hours, the selected wind forecast averaged about 1.75 GW above reported wind output. That positive bias is a finding to include when reviewing forecast uncertainty and procurement decisions. It does not prove that wind was curtailed: these datasets do not report unconstrained wind availability or curtailment.
