@@ -1,5 +1,7 @@
 # WindLens handoff
 
+Archived copy of the phase by phase working handoff, kept for decision history. Phase 6 (README, video script, and final checks) was completed after this archive was created.
+
 ## Phase status
 
 | Phase | Status | Commit evidence |
@@ -9,10 +11,10 @@
 | 2. Backend and snapshot | Done | f86a900, 840f7f5, eb01f72, d655763, 7ad05d3 |
 | 3. React frontend | Done | 473cfce |
 | 4. Docker and CI | Done | e5914bb |
-| 5. Vercel deployment | Stage A live and owner confirmed | e158885, de6d827 |
-| 6. README, video, and final handoff | Pending | Not complete |
+| 5. Vercel deployment | Stage A live, author confirmed | e158885, de6d827 |
+| 6. README, video, and final handoff | Completed after this archive | See README.md |
 
-Phase 5 Stage B (container path) was skipped by owner decision; revisit only if asked. CI run for Phase 4: https://github.com/Narayan201120/tcnswzd/actions/runs/40112034159, all three jobs green (backend ruff plus pytest with 100 percent metrics coverage, frontend lint, 29 tests, and build, docker compose smoke tests).
+Phase 5 Stage B (container path) was skipped by the author's decision; revisit only if asked. CI run for Phase 4: https://github.com/Narayan201120/tcnswzd/actions/runs/40112034159, all three jobs green (backend ruff plus pytest with 100 percent metrics coverage, frontend lint, 29 tests, and build, docker compose smoke tests).
 
 Repository head before this handoff change was 7ad05d3. Phase 2 verification in the Codespace: 20 tests passed, metrics module coverage 100% (170 of 170 statements). Tests were not rerun during this documentation-only handoff turn.
 
@@ -127,8 +129,8 @@ Files added at the repository root: `vercel.json`, `requirements.txt`, and `api/
 - requirements.txt: `fastapi==0.119.1` and `pydantic==2.14.1` only. Vercel's Python runtime serves the ASGI app with its own server, so Uvicorn is intentionally absent. Verified during the local build that Vercel installs requirements with uv and vendors the packages into the function.
 - api/index.py: imports the one FastAPI app object from backend.app after inserting the repository root into sys.path, so the import resolves regardless of runtime path order. The snapshot path in backend/store.py is resolved from its own file location, not the working directory.
 - Local verification in the Codespace, no Vercel account needed: loading api/index.py by file path from /tmp boots the app, and TestClient calls return health ok with 1,488 actual rows and 17,864 vintages, MAE 2,038.91 MW and bias +1,747.89 MW and relative bias +15.49 percent for the default January run, and 24 forecast points with 18,781.0 MW first forecast and zero missing for Jan 2 at the 09:00 cutoff. These match the Codespace backend values exactly. A full `npx vercel@latest build` with stub project settings succeeded: frontend built (572.4 kB JS, 162.9 kB gzip), Python function built with uv, and the function bundle map includes backend/data/january_2026.json with fastapi, pydantic, starlette, and pydantic_core vendored. The uv virtual environment used for the function weighed 19 MB uncompressed, in line with the prebuild estimate of about 18 MB.
-- Deployment steps for the owner: sign in at vercel.com, Add New, Project, Import Narayan201120/tcnswzd. Framework preset Other, root directory left empty (repository root), project name `windlens` (fallbacks `windlens-app`, `windlens-forecast`). vercel.json supplies the build settings; no environment variables are required. Deploy, then Settings, Deployment Protection: disable Vercel Authentication so the production URL is public. Every push to master redeploys automatically.
-- The production URL is https://tcnswzd.vercel.app, confirmed by the owner on 2026-10-24. The project is deployed by CLI from the Codespace; the Git integration is intentionally not connected, so redeploys happen by CLI when asked or when app code changes.
+- Deployment is performed with the Vercel CLI from a development environment, using project name `tcnswzd` and the build settings in vercel.json. No environment variables are required.
+- The production URL is https://tcnswzd.vercel.app, confirmed by the author on 2026-10-24. The project is deployed by CLI from a development environment; the Git integration is intentionally not connected, so redeploys happen by CLI when asked or when app code changes.
 
 ## Next step: Phase 6 README, video script, and final handoff
 
@@ -137,8 +139,8 @@ Phase 6 remaining work: the full README (directory descriptions, start instructi
 Deployment history for reference:
 
 1. Stage A deployed via the Vercel CLI from the Codespace as project `tcnswzd` (the `windlens` name is taken by an unrelated project). The CLI deployment is not connected to GitHub, so pushes to master do not auto-redeploy until the Vercel Git integration is connected in the dashboard (Project Settings, Git) or the CLI deploy is rerun after each push.
-2. Verification passed with curl from the Codespace: `/health` returns ok with 1,488 actual rows and 17,864 vintages; `/api/accuracy/summary` returns MAE 2,038.91 MW and bias +1,747.89 MW with 744 scored hours; `/api/forecast/latest` matches the Codespace values; the root and hash routes serve the static app; no login wall. Production URL: https://tcnswzd.vercel.app (owner confirmed 2026-10-24).
-3. Stage B (container path) was skipped by owner decision after Stage A passed verification; it is not planned unless the owner asks.
+2. Verification passed with curl from the Codespace: `/health` returns ok with 1,488 actual rows and 17,864 vintages; `/api/accuracy/summary` returns MAE 2,038.91 MW and bias +1,747.89 MW with 744 scored hours; `/api/forecast/latest` matches the Codespace values; the root and hash routes serve the static app; no login wall. Production URL: https://tcnswzd.vercel.app (author confirmed 2026-10-24).
+3. Stage B (container path) was skipped by the author's decision after Stage A passed verification; it is not planned unless asked.
 4. Phase 4 (Docker and CI) completed on e5914bb and verified in CI run 40112034159.
 
 ## Phase 3 frontend scope, as implemented

@@ -1,3 +1,10 @@
+"""Reproducible audit of the January 2026 alignment and bias.
+
+Loads the committed snapshot, re-fetches boundary FUELHH actuals from the
+Elexon stream, and prints the hand check, alignment sensitivity, actual level
+terciles, and time of day blocks as JSON. Evidence for docs/DESIGN.md only.
+"""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
