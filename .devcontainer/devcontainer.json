@@ -1,0 +1,23 @@
+{
+  "name": "WindLens Dev",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true,
+      "installDockerBuildx": true
+    }
+  },
+  "forwardPorts": [3000, 8000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Frontend"
+    },
+    "8000": {
+      "label": "Backend API"
+    }
+  },
+  "remoteUser": "vscode"
+}
