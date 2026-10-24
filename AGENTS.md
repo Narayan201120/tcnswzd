@@ -34,6 +34,7 @@ Run commands in the Codespace unless they are Git or documentation operations th
 ## Deployment (Vercel, Stage A)
 
 - The repo root carries `vercel.json`, `requirements.txt`, and `api/index.py`. The Vercel build runs `npm ci` and `npm run build` inside `frontend`, serves `frontend/dist` as the static site, and rewrites `/api/*` and `/health` to the Python function. `includeFiles` bundles `backend/**` with the snapshot.
+- `vercel.json` must pin `"framework": null`. When Vercel auto-detects FastAPI as a backend framework, its build pipeline skips the requirements.txt install (the function 500s with no fastapi module) and rewrites switch to destination-path routing, which breaks the API paths. With framework null the generic builder installs requirements with uv and preserves the original request path through rewrites.
 - `requirements.txt` lists FastAPI and Pydantic only. Vercel's Python runtime serves the ASGI app itself, so Uvicorn is never part of the deployment dependencies.
 - Deploy by importing the GitHub repository in the Vercel dashboard (project name `windlens`) so every push to master redeploys. The CLI alternative is `npx vercel@latest login`, then `link`, then `--prod`; no global install anywhere. Never commit `.vercel/` project settings.
 - After deployment, verify `/health`, `/api/forecast/latest`, `/api/accuracy/summary` (expect MAE 2,038.91 MW and bias +1,747.89 MW), the SPA root, a hash route, and that access needs no login. Do not write the production URL into any file until it is confirmed working.
