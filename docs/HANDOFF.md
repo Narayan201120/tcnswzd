@@ -8,9 +8,11 @@
 | 1. Research and design | Done | 00a1803, 0c71eea, c530b9b |
 | 2. Backend and snapshot | Done | f86a900, 840f7f5, eb01f72, d655763, 7ad05d3 |
 | 3. React frontend | Done | 473cfce |
-| 4. Docker and CI | Pending | Not started |
-| 5. Vercel deployment | Stage A prepared and locally verified; awaiting dashboard deploy | This commit |
+| 4. Docker and CI | Done | e5914bb |
+| 5. Vercel deployment | Stage A live and owner confirmed | e158885, de6d827 |
 | 6. README, video, and final handoff | Pending | Not complete |
+
+Phase 5 Stage B (container path) was skipped by owner decision; revisit only if asked. CI run for Phase 4: https://github.com/Narayan201120/tcnswzd/actions/runs/40112034159, all three jobs green (backend ruff plus pytest with 100 percent metrics coverage, frontend lint, 29 tests, and build, docker compose smoke tests).
 
 Repository head before this handoff change was 7ad05d3. Phase 2 verification in the Codespace: 20 tests passed, metrics module coverage 100% (170 of 170 statements). Tests were not rerun during this documentation-only handoff turn.
 
@@ -128,14 +130,16 @@ Files added at the repository root: `vercel.json`, `requirements.txt`, and `api/
 - Deployment steps for the owner: sign in at vercel.com, Add New, Project, Import Narayan201120/tcnswzd. Framework preset Other, root directory left empty (repository root), project name `windlens` (fallbacks `windlens-app`, `windlens-forecast`). vercel.json supplies the build settings; no environment variables are required. Deploy, then Settings, Deployment Protection: disable Vercel Authentication so the production URL is public. Every push to master redeploys automatically.
 - The production URL is https://tcnswzd.vercel.app, confirmed by the owner on 2026-10-24. The project is deployed by CLI from the Codespace; the Git integration is intentionally not connected, so redeploys happen by CLI when asked or when app code changes.
 
-## Next step: Vercel Stage A deploy, then Stage B, then Phase 4
+## Next step: Phase 6 README, video script, and final handoff
 
-Order confirmed with the owner: Phase 5 first (two stages), then Phase 4, then Phase 6.
+Phase 6 remaining work: the full README (directory descriptions, start instructions with docker compose and the non Docker fallback, the live Vercel URL, architecture and decision log, assumptions, metrics definitions, limitations, and the AI tools disclosure including the Docker requirements split), docs/VIDEO_SCRIPT.md with both timed parts, the final anonymity grep over files and commit messages, and submission form checks. Phase 4 evidence: CI run 40112034159, backend image 203 MB, frontend image 74.5 MB, backend 20 tests with 100 percent metrics.py coverage, frontend 29 tests, ruff and ESLint clean.
+
+Deployment history for reference:
 
 1. Stage A deployed via the Vercel CLI from the Codespace as project `tcnswzd` (the `windlens` name is taken by an unrelated project). The CLI deployment is not connected to GitHub, so pushes to master do not auto-redeploy until the Vercel Git integration is connected in the dashboard (Project Settings, Git) or the CLI deploy is rerun after each push.
 2. Verification passed with curl from the Codespace: `/health` returns ok with 1,488 actual rows and 17,864 vintages; `/api/accuracy/summary` returns MAE 2,038.91 MW and bias +1,747.89 MW with 744 scored hours; `/api/forecast/latest` matches the Codespace values; the root and hash routes serve the static app; no login wall. Production URL: https://tcnswzd.vercel.app (owner confirmed 2026-10-24).
-3. Stage B (time boxed to one hour, only after Stage A works): branch `vercel-container` adds `Dockerfile.vercel` (python 3.12 slim, uvicorn on 0.0.0.0:$PORT, snapshot included) and a `services` based vercel.json with a web service for the Vite build and an api service using `runtime: container` and `entrypoint: Dockerfile.vercel`, with rewrites sending `/api/(.*)` and `/health` to the api service. Per the Vercel Docker guide, the original request path reaches the container service, so the existing `/api` prefixed FastAPI routes work unchanged. Verify locally in the Codespace as far as docker build, run, and curl. Deployed as a second Vercel project from the branch; do not merge into master until the owner decides.
-4. Phase 4 (Docker and CI) after Phase 5 is approved, then Phase 6.
+3. Stage B (container path) was skipped by owner decision after Stage A passed verification; it is not planned unless the owner asks.
+4. Phase 4 (Docker and CI) completed on e5914bb and verified in CI run 40112034159.
 
 ## Phase 3 frontend scope, as implemented
 
