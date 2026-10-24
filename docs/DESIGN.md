@@ -192,3 +192,113 @@ Elexon's [WINDFOR dataset stream documentation](https://bmrs.elexon.co.uk/api-do
 ### Client note
 
 Across the 744 January decision hours, the selected wind forecast averaged about 1.75 GW above reported wind output. That positive bias is a finding to include when reviewing forecast uncertainty and procurement decisions. It does not prove that wind was curtailed: these datasets do not report unconstrained wind availability or curtailment.
+
+## Bias diagnostic follow up (evidence, not proof)
+
+A time boxed diagnostic ran in the Codespace on 2026-10-24 using scripts/bias_diagnostic.py against the committed snapshot, with the approved alignment rule unchanged. Run it from the repo root with `PYTHONPATH=. .venv/bin/python scripts/bias_diagnostic.py`. Every table below is a measurement of that snapshot. They are evidence about the bias pattern, not proof of a cause.
+
+### Lead time profile, 4 hour buckets, all January published vintages
+
+All 17,688 January published vintages were scored after dropping 0 exact duplicates; 6,006 fell outside the [0,48) lead range and 0 lacked an actual pair, leaving 11,682 scored rows, matching the by-lead-time endpoint counts. Each forecast is paired with the approved hourly mean of FUELHH half hours at T and T+30 minutes.
+
+| Lead hours | n | Mean forecast MW | Mean actual MW | Mean signed error MW | Relative bias pct | MAE MW | RMSE MW |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 to 4 | 963 | 12,853.45 | 11,398.52 | +1,454.93 | 12.76 | 1,690.90 | 2,145.89 |
+| 4 to 8 | 967 | 12,910.77 | 11,431.61 | +1,479.16 | 12.94 | 1,703.53 | 2,163.61 |
+| 8 to 12 | 972 | 13,009.25 | 11,471.16 | +1,538.09 | 13.41 | 1,780.22 | 2,229.32 |
+| 12 to 16 | 978 | 13,059.21 | 11,437.74 | +1,621.47 | 14.18 | 1,829.14 | 2,296.25 |
+| 16 to 20 | 985 | 13,075.03 | 11,324.73 | +1,750.29 | 15.46 | 1,926.98 | 2,403.00 |
+| 20 to 24 | 991 | 13,004.73 | 11,229.18 | +1,775.55 | 15.81 | 1,957.31 | 2,427.55 |
+| 24 to 28 | 989 | 12,962.30 | 11,227.04 | +1,735.26 | 15.46 | 1,966.53 | 2,421.87 |
+| 28 to 32 | 985 | 12,930.68 | 11,248.33 | +1,682.35 | 14.96 | 1,997.22 | 2,457.51 |
+| 32 to 36 | 980 | 12,990.13 | 11,284.63 | +1,705.49 | 15.11 | 2,069.36 | 2,546.15 |
+| 36 to 40 | 974 | 13,072.24 | 11,266.07 | +1,806.17 | 16.03 | 2,124.02 | 2,644.38 |
+| 40 to 44 | 967 | 13,072.08 | 11,169.61 | +1,902.48 | 17.03 | 2,245.07 | 2,807.26 |
+| 44 to 48 | 931 | 13,011.64 | 11,069.15 | +1,942.49 | 17.55 | 2,345.06 | 2,910.74 |
+
+Bias is already large at the shortest leads: +1,454.93 MW, or 12.76 percent of mean actual, at 0 to 4 h. It then grows steadily with lead, about 9.81 MW per additional lead hour on a least squares fit over the bucket midpoints, reaching +1,942.49 MW, or 17.55 percent, at 44 to 48 h, while MAE rises from 1,690.90 to 2,345.06 MW. Mean forecast stays between 12.85 and 13.08 GW in every bucket while mean actual stays between 11.07 and 11.47 GW, so most of the bias is a level gap between published forecast and reported outturn, with forecast skill degradation as a secondary effect on top.
+
+### Bias by actual level, 744 selected cutoff hours
+
+Terciles are rank balanced groups of 248 hours ordered by hourly mean actual.
+
+| Group | n | Actual range MW | Mean actual MW | MAE MW | Bias MW | Relative bias pct |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| Low | 248 | 1,711.5 to 8,824.5 | 6,331.43 | 1,820.55 | +1,450.68 | 22.91 |
+| Mid | 248 | 8,828.5 to 14,474.5 | 11,658.24 | 1,941.92 | +1,510.19 | 12.95 |
+| High | 248 | 14,481.0 to 17,755.5 | 15,861.00 | 2,354.27 | +2,282.79 | 14.39 |
+
+Mean signed error in MW rises with wind level, from +1,450.68 MW in the low tercile to +2,282.79 MW in the high tercile. That direction is the one a constraint on output at high wind would produce, so the table is evidence consistent with constraint, but relative bias is not monotonic across terciles and FUELHH and WINDFOR contain no curtailment or unconstrained availability field, so this is not proof of curtailment.
+
+### Shift test with the actual window moved
+
+For every shift the forecast timestamp stays fixed at T and only the actual window moves, so this does not relabel forecast timestamps or change vintage selection. Targets whose shifted half hour window has no actuals at the month edges are dropped, so n varies between 738 and 744.
+
+| Actual window shift h | n | MAE MW | Bias MW |
+| ---: | ---: | ---: | ---: |
+| -6 | 738 | 2,280.18 | +1,648.04 |
+| -5 | 739 | 2,168.09 | +1,664.76 |
+| -4 | 740 | 2,071.20 | +1,681.60 |
+| -3 | 741 | 1,995.28 | +1,698.60 |
+| -2 | 742 | 1,954.85 | +1,715.52 |
+| -1 | 743 | 1,972.85 | +1,731.98 |
+| 0 | 744 | 2,038.91 | +1,747.89 |
+| +1 | 743 | 2,121.09 | +1,764.31 |
+| +2 | 742 | 2,211.14 | +1,780.77 |
+| +3 | 741 | 2,310.76 | +1,797.29 |
+| +4 | 740 | 2,420.25 | +1,813.89 |
+| +5 | 739 | 2,544.52 | +1,830.09 |
+| +6 | 738 | 2,680.07 | +1,846.11 |
+
+| Actual window shift h | n | MAE MW | Bias MW |
+| ---: | ---: | ---: | ---: |
+| -3 | 741 | 1,995.28 | +1,698.60 |
+| -2.5 | 741 | 1,965.81 | +1,705.84 |
+| -2 | 742 | 1,954.85 | +1,715.52 |
+| -1.5 | 742 | 1,957.12 | +1,722.56 |
+| -1 | 743 | 1,972.85 | +1,731.98 |
+| -0.5 | 743 | 2,001.94 | +1,738.78 |
+| 0 | 744 | 2,038.91 | +1,747.89 |
+| +0.5 | 743 | 2,080.16 | +1,757.44 |
+| +1 | 743 | 2,121.09 | +1,764.31 |
+| +1.5 | 742 | 2,167.25 | +1,773.73 |
+| +2 | 742 | 2,211.14 | +1,780.77 |
+| +2.5 | 741 | 2,261.14 | +1,790.11 |
+| +3 | 741 | 2,310.76 | +1,797.29 |
+
+The minimum MAE is 1,954.85 MW at a -2 h shift, an interior point of the tested -6 to +6 h range, and the half hour scan confirms a smooth minimum near -2 h rather than an edge effect. Against the approved zero shift MAE of 2,038.91 MW the gain is 84.06 MW, or 4.12 percent. The 10 percent decision threshold is not met, so the alignment rule stands as approved and this remains an open validation item with a data owner, not a change trigger. Bias stays between +1,648.04 and +1,846.11 MW at every shift, so the bias is not produced by the alignment choice.
+
+### Daily mean signed error over the 31 delivery days
+
+| Delivery day | Mean signed error MW | Delivery day | Mean signed error MW |
+| --- | ---: | --- | ---: |
+| 2026-01-02 | +3,109.9 | 2026-01-03 | +2,102.2 |
+| 2026-01-04 | +1,146.5 | 2026-01-05 | -55.9 |
+| 2026-01-06 | +1,835.3 | 2026-01-07 | +1,468.1 |
+| 2026-01-08 | +844.8 | 2026-01-09 | +804.9 |
+| 2026-01-10 | -86.1 | 2026-01-11 | +4,801.6 |
+| 2026-01-12 | +4,868.2 | 2026-01-13 | +156.5 |
+| 2026-01-14 | -84.2 | 2026-01-15 | +1,041.8 |
+| 2026-01-16 | +352.0 | 2026-01-17 | +1,726.8 |
+| 2026-01-18 | +1,554.8 | 2026-01-19 | -730.1 |
+| 2026-01-20 | +351.8 | 2026-01-21 | +3,658.3 |
+| 2026-01-22 | +2,666.4 | 2026-01-23 | +1,514.8 |
+| 2026-01-24 | +1,925.9 | 2026-01-25 | +1,891.2 |
+| 2026-01-26 | +1,980.9 | 2026-01-27 | +3,479.1 |
+| 2026-01-28 | +5,374.8 | 2026-01-29 | +1,739.0 |
+| 2026-01-30 | +1,371.7 | 2026-01-31 | +2,390.2 |
+| 2026-02-01 | +983.0 | | |
+
+27 of 31 delivery days have a positive mean error and day means range from -730.1 to +5,374.8 MW. Together with the near flat bucket means in the lead time table, the offset is a broad based level difference across the month, not the product of a few unusually bad days.
+
+### Decision rules applied
+
+- Bias large and flat across lead times: largely met. The gap is already 12.76 percent at 0 to 4 h lead, so the primary description is a systematic gap between published forecast and reported outturn, and the product should offer a bias adjusted uncertainty reference next to the existing P90 and P95 buffer values.
+- Bias grows with lead time: met as a secondary effect, about 9.81 MW per lead hour, described as forecast skill degradation on top of the level gap.
+- Shift minimum interior with MAE gain above 10 percent: not met, the gain is 4.12 percent, so the approved alignment rule stands and no alignment decision is flagged. The -2 h minimum stays attached to the open WINDFOR interval validation question.
+- Curtailment, embedded wind, or capacity differences: not claimed as the cause. The tercile rise in MW bias points in the direction constraint would produce, but no dataset field identifies a mechanism and relative bias is not monotonic.
+- Every explanation above is labeled evidence, not proof.
+
+### Client wording for UI and video
+
+Across the 744 decision hours of January 2026, the published national wind forecast averaged about 1.75 GW above the output reported afterwards, roughly 15 percent of average wind generation. The gap is already present in forecasts used 0 to 4 hours ahead and appears on 27 of 31 delivery days, so it behaves like a steady level difference between forecast and outturn rather than a few bad days. At longer lead times the gap widens slowly, from about 1.45 GW in the first 4 hours to about 1.95 GW at 44 to 48 hours, so fresher forecasts are modestly more accurate. For day ahead buying, treat the historical P90 and P95 overforecast errors of about 4.1 and 5.3 GW as the uncertainty reference, and note that these datasets cannot explain why the forecast sits high because they do not report curtailment or unconstrained availability.
