@@ -17,6 +17,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir /app/backend
 COPY . /app/backend/
 
+# Build context directories can carry restrictive modes from the checkout
+# environment; normalize so the non root user can traverse and read everything.
+RUN chmod -R a+rX /app/backend
+
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 USER appuser
 
