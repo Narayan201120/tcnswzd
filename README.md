@@ -2,7 +2,7 @@
 
 > Day-ahead wind forecast clarity and accuracy
 
-Live app: **https://tcnswzd.vercel.app**
+Live app: **https://windlens-dayahead.vercel.app**
 
 [![CI](https://github.com/Narayan201120/tcnswzd/actions/workflows/ci.yml/badge.svg)](https://github.com/Narayan201120/tcnswzd/actions/workflows/ci.yml)
 

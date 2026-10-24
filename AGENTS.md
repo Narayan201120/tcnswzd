@@ -1,6 +1,6 @@
 # WindLens contributor guide
 
-WindLens is a day-ahead wind forecast clarity and accuracy pilot for a GB energy utility audience. It compares the Elexon WINDFOR national wind forecast with FUELHH wind outturn for the January 2026 day-ahead purchase decisions, serves a React frontend with a FastAPI backend, and reports accuracy metrics with plain language buying notes. The live deployment is https://tcnswzd.vercel.app.
+WindLens is a day-ahead wind forecast clarity and accuracy pilot for a GB energy utility audience. It compares the Elexon WINDFOR national wind forecast with FUELHH wind outturn for the January 2026 day-ahead purchase decisions, serves a React frontend with a FastAPI backend, and reports accuracy metrics with plain language buying notes. The live deployment is https://windlens-dayahead.vercel.app.
 
 ## Commands
 

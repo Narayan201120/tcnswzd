@@ -2,7 +2,7 @@
 
 Two parts, total under 10 minutes. Part 1 pitches the product to the utility customer (target
 4:30). Part 2 walks the tech lead through architecture, code, and process (target 5:00). Record
-the live app at https://tcnswzd.vercel.app and the repository side by side.
+the live app at https://windlens-dayahead.vercel.app and the repository side by side.
 
 ## Pre recording checklist
 
