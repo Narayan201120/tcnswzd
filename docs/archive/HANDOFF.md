@@ -1,6 +1,6 @@
 # WindLens handoff
 
-Archived copy of the phase by phase working handoff, kept for decision history. Phase 6 (README, video script, and final checks) was completed after this archive was created.
+Archived copy of the phase by phase working handoff, kept for decision history. Phase 6 (README and final checks) were completed after this archive was created.
 
 ## Phase status
 
@@ -132,7 +132,7 @@ Files added at the repository root: `vercel.json`, `requirements.txt`, and `api/
 - Deployment is performed with the Vercel CLI from a development environment, using project name `tcnswzd` and the build settings in vercel.json. No environment variables are required.
 - The production URL is https://windlens-dayahead.vercel.app, author confirmed on 2026-10-24. It is a project domain that automatically tracks the latest production deployment; a temporary CLI alias used during setup was removed. The original https://tcnswzd.vercel.app domain is retained. The Vercel Git integration is connected, so pushes to master auto-deploy production, and Vercel Authentication is disabled at the project level so both domains are public.
 
-## Next step: Phase 6 README, video script, and final handoff
+## Next step: Phase 6 README and final handoff
 
 Phase 6 remaining work: the full README (directory descriptions, start instructions with docker compose and the non Docker fallback, the live Vercel URL, architecture and decision log, assumptions, metrics definitions, limitations, and the AI tools disclosure including the Docker requirements split), the recording script, the final anonymity grep over files and commit messages, and submission form checks. Phase 4 evidence: CI run 40112034159, backend image 203 MB, frontend image 74.5 MB, backend 20 tests with 100 percent metrics.py coverage, frontend 29 tests, ruff and ESLint clean.
 
