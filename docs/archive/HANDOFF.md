@@ -134,7 +134,7 @@ Files added at the repository root: `vercel.json`, `requirements.txt`, and `api/
 
 ## Next step: Phase 6 README, video script, and final handoff
 
-Phase 6 remaining work: the full README (directory descriptions, start instructions with docker compose and the non Docker fallback, the live Vercel URL, architecture and decision log, assumptions, metrics definitions, limitations, and the AI tools disclosure including the Docker requirements split), docs/VIDEO_SCRIPT.md with both timed parts, the final anonymity grep over files and commit messages, and submission form checks. Phase 4 evidence: CI run 40112034159, backend image 203 MB, frontend image 74.5 MB, backend 20 tests with 100 percent metrics.py coverage, frontend 29 tests, ruff and ESLint clean.
+Phase 6 remaining work: the full README (directory descriptions, start instructions with docker compose and the non Docker fallback, the live Vercel URL, architecture and decision log, assumptions, metrics definitions, limitations, and the AI tools disclosure including the Docker requirements split), the recording script, the final anonymity grep over files and commit messages, and submission form checks. Phase 4 evidence: CI run 40112034159, backend image 203 MB, frontend image 74.5 MB, backend 20 tests with 100 percent metrics.py coverage, frontend 29 tests, ruff and ESLint clean.
 
 Deployment history for reference:
 

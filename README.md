@@ -91,7 +91,6 @@ tcnswzd/
     package.json          scripts and dependencies
   docs/
     DESIGN.md             data research, contract, and bias analysis
-    VIDEO_SCRIPT.md       demo script for the customer and tech lead recordings
     archive/HANDOFF.md    phase by phase build history
     samples/              small raw Elexon API samples
     screenshots/          UI captures used above
